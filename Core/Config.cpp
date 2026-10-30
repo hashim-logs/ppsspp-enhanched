@@ -1020,6 +1020,10 @@ static constexpr ConfigSetting graphicsSettings[] = {
 	ConfigSetting("TexDeposterize", SETTING(g_Config, bTexDeposterize), false, CfgFlag::PER_GAME | CfgFlag::REPORT)
 		.Label(I18NCat::GRAPHICS, "Deposterize"),
 	ConfigSetting("TexHardwareScaling", SETTING(g_Config, bTexHardwareScaling), false, CfgFlag::PER_GAME | CfgFlag::REPORT),
+	ConfigSetting("AITextureUpscaling", SETTING(g_Config, bAITextureUpscaling), false, CfgFlag::PER_GAME | CfgFlag::REPORT)
+		.Label(I18NCat::GRAPHICS, "AI Texture Upscaling"),
+	ConfigSetting("FSR4xTextureUpscaling", SETTING(g_Config, bFSR4xTextureUpscaling), false, CfgFlag::PER_GAME | CfgFlag::REPORT)
+		.Label(I18NCat::GRAPHICS, "FSR 4x Texture Upscaling"),
 	ConfigSetting("VerticalSync", SETTING(g_Config, bVSync), true, CfgFlag::PER_GAME)
 		.Label(I18NCat::GRAPHICS, "VSync"),
 	ConfigSetting("LowLatencyPresent", SETTING(g_Config, bLowLatencyPresent), false, CfgFlag::PER_GAME)

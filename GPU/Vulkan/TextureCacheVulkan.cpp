@@ -408,7 +408,10 @@ bool TextureCacheVulkan::RunMultipassCompute(VulkanContext *vulkan, VkCommandBuf
 		int srcHeight;
 		int dstWidth;
 		int dstHeight;
+		int enableAIUpscaling;
 	};
+	// Use FSR 4x config when 4x shader is active, otherwise use general AI upscaling config
+	bool useAIUpscaling = (shaderScaleFactor_ == 4) ? g_Config.bFSR4xTextureUpscaling : g_Config.bAITextureUpscaling;
 
 	for (const MultipassStageDesc &stage : multipassStageDescs_) {
 		if (stage.shaderIndex >= multipassCS_.size()) {
@@ -443,6 +446,7 @@ bool TextureCacheVulkan::RunMultipassCompute(VulkanContext *vulkan, VkCommandBuf
 			srcHeight * stage.srcHeightScale,
 			stage.useFinalOutputSize ? dstWidth : srcWidth * stage.dstWidthScale,
 			stage.useFinalOutputSize ? dstHeight : srcHeight * stage.dstHeightScale,
+			useAIUpscaling ? 1 : 0,
 		};
 		VkPipeline pipeline = computeShaderManager_.GetPipeline(multipassCS_[stage.shaderIndex], "Multipass Compute Shader");
 		if (!pipeline) {
@@ -476,7 +480,9 @@ bool TextureCacheVulkan::ScaleBufferToImage(VulkanContext *vulkan, VkCommandBuff
 			return false;
 		}
 		VkDescriptorSet descSet = computeShaderManager_.GetDescriptorSet(dstView, texBuf, bufferOffset, srcSize, VK_NULL_HANDLE, 0, 0, VK_NULL_HANDLE, textureScaleCBuffer_.Buffer(), textureScaleCBuffer_.Size());
-		struct Params { int x; int y; } params{ srcWidth, srcHeight };
+		// Use FSR 4x config when 4x shader is active, otherwise use general AI upscaling config
+		bool useAIUpscaling = (shaderScaleFactor_ == 4) ? g_Config.bFSR4xTextureUpscaling : g_Config.bAITextureUpscaling;
+		struct Params { int x; int y; int enableAIUpscaling; } params{ srcWidth, srcHeight, useAIUpscaling ? 1 : 0 };
 		VkPipeline pipeline = computeShaderManager_.GetPipeline(singlePassCS_, "Single Pass Compute Shader");
 		if (!pipeline) {
 			return false;

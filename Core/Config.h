@@ -374,6 +374,8 @@ public:
 	int iTexScalingType; // 0 = xBRZ, 1 = Hybrid
 	bool bTexDeposterize;
 	bool bTexHardwareScaling;
+	bool bAITextureUpscaling;  // Enable AI-based CNN texture upscaler
+	bool bFSR4xTextureUpscaling;  // Enable FSR 1.0 4x texture upscaling (when FSR 4x shader selected)
 	// In percent of normal speed. 0 means unlimited, and negative (not for analog) disabled.
 	int iAltSpeedPercent1;
 	int iAltSpeedPercent2;
