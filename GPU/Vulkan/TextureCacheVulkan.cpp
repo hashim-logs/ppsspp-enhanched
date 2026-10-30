@@ -490,7 +490,7 @@ bool TextureCacheVulkan::ScaleBufferToImage(VulkanContext *vulkan, VkCommandBuff
 		vkCmdBindPipeline(cmdInit, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 		vkCmdBindDescriptorSets(cmdInit, VK_PIPELINE_BIND_POINT_COMPUTE, computeShaderManager_.GetPipelineLayout(), 0, 1, &descSet, 0, nullptr);
 		vkCmdPushConstants(cmdInit, computeShaderManager_.GetPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(params), &params);
-		vkCmdDispatch(cmdInit, (mipWidth + 7) / 8, (mipHeight + 7) / 8, 1);
+		vkCmdDispatch(cmdInit, (dstWidth + 7) / 8, (dstHeight + 7) / 8, 1);
 		return true;
 	}
 	case TextureScalePipelineType::MULTIPASS:
