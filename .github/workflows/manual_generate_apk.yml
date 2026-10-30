@@ -18,7 +18,7 @@
     apk:
       name: Generate ${{ github.event.inputs.buildVariant }} APK
       runs-on: ubuntu-latest
-      timeout-minutes: 45
+      timeout-minutes: 60
 
       steps:
         - uses: actions/checkout@v4
@@ -45,8 +45,8 @@
             java-version: '17'
             cache: 'gradle'
 
-        - name: Set up Android SDK
-          uses: android-actions/setup-android@v3
+        - name: Set up Android SDK (v2 - stable)
+          uses: android-actions/setup-android@v2
           with:
             api-level: 34
             ndk-version: r25c
@@ -63,7 +63,6 @@
 
         - name: Assemble APK
           run: |
-            # Map input variant to Gradle task name
             VARIANT="${{ github.event.inputs.buildVariant }}"
             TASK="assemble${VARIANT}Debug"
             echo "Building task: $TASK"
@@ -73,7 +72,6 @@
           run: |
             find . -name "*.apk"
             mkdir -p ppsspp
-            # PPSSPP outputs to android/build/outputs/apk/<flavor>/<type>/
             find android/build/outputs/apk -name "*.apk" -exec cp {} ppsspp/ \;
 
         - name: Upload artifact
@@ -82,3 +80,4 @@
             name: android-${{ github.event.inputs.buildVariant }} build
             path: ppsspp/
             retention-days: 7
+
