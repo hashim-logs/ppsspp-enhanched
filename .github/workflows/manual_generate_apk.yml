@@ -6,13 +6,14 @@
           type: choice
           description: 'Build Variant'
           required: true
-          default: 'NormalOptimized'
+          default: 'normalDebug'
           options:
-          - NormalOptimized
-          - NormalDebug
-          - VROptimized
-          - VRDebug
-          - LegacyOptimized
+            - normalDebug
+            - normalRelease
+            - vrDebug
+            - vrRelease
+            - legacyDebug
+            - legacyRelease
 
   jobs:
     apk:
@@ -45,23 +46,19 @@
             java-version: '17'
             cache: 'gradle'
 
-        - name: Set up Android SDK (manual, fixed)
+        - name: Set up Android SDK (robust manual)
           run: |
-            # 1. Download & extract cmdline-tools FIRST
+            # Download cmdline-tools directly (no chicken-egg)
             mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools
             cd ${ANDROID_SDK_ROOT}/cmdline-tools
             wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
             unzip -q cmdline-tools.zip
             mv cmdline-tools latest
             rm cmdline-tools.zip
-
-            # 2. Add to PATH
             export PATH=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:$PATH
 
-            # 3. Accept licenses
+            # Accept licenses + install exact packages PPSSPP needs
             yes | sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT}
-
-            # 4. Install required packages
             sdkmanager \
               "platforms;android-34" \
               "build-tools;34.0.0" \
@@ -69,17 +66,15 @@
               "cmake;3.22.1" \
               --sdk_root=${ANDROID_SDK_ROOT}
 
-        - name: Test androidGitVersion
+        - name: Discover Gradle variants
           run: |
-            echo "count=${{steps.valid-tags.outputs.count}}"
-            gradle --quiet androidGitVersion
+            ./gradlew tasks --all | grep -E '^assemble' | head -30
 
         - name: Assemble APK
           run: |
             VARIANT="${{ github.event.inputs.buildVariant }}"
-            TASK="assemble${VARIANT}Debug"
-            echo "Building task: $TASK"
-            ./gradlew $TASK --stacktrace --no-daemon -Dorg.gradle.jvmargs="-Xmx4g"
+            echo "Building: assemble${VARIANT}"
+            ./gradlew assemble${VARIANT} --stacktrace --no-daemon -Dorg.gradle.jvmargs="-Xmx4g"
 
         - name: Package build
           run: |
