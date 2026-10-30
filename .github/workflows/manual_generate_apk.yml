@@ -1,4 +1,4 @@
-  name: Manual Generate Android APK
+ name: Manual Generate Android APK
   on:
     workflow_dispatch:
       inputs:
@@ -45,16 +45,12 @@
             java-version: '17'
             cache: 'gradle'
 
-        - name: Set up Android SDK (v2 - stable)
-          uses: android-actions/setup-android@v2
-          with:
-            api-level: 34
-            ndk-version: r25c
-            cmake-version: '3.22.1'
-            build-tools: '34.0.0'
-
-        - name: Accept Android Licenses
-          run: yes | sdkmanager --licenses
+        - name: Set up Android SDK (manual - avoids broken action)
+          run: |
+            sdkmanager "cmdline-tools;9.0" --sdk_root=${ANDROID_SDK_ROOT}
+            export PATH=$ANDROID_SDK_ROOT/cmdline-tools/9.0/bin:$PATH
+            yes | sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT}
+            sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653" "cmake;3.22.1" --sdk_root=${ANDROID_SDK_ROOT}
 
         - name: Test androidGitVersion
           run: |
@@ -80,4 +76,3 @@
             name: android-${{ github.event.inputs.buildVariant }} build
             path: ppsspp/
             retention-days: 7
-
