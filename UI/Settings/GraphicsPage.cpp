@@ -354,6 +354,11 @@ void BuildGraphicsSettings(SettingsPage *page) {
 		}).Disabled(&g_Config.bSoftwareRendering);
 	}
 
+	// AI Texture Upscaling toggle
+	page->Bool(&g_Config.bAITextureUpscaling, SettingText(I18NCat::GRAPHICS, "AI Texture Upscaling")).EnabledFunc([]() {
+		return !g_Config.bSoftwareRendering && (g_Config.bTexHardwareScaling || !UsingHardwareTextureScaling());
+	});
+
 	page->Setting(&g_Config.iTexScalingType).EnabledFunc([]() {
 		return !g_Config.bSoftwareRendering && !UsingHardwareTextureScaling();
 	});

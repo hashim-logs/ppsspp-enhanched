@@ -294,6 +294,7 @@ layout(std430, set = 0, binding = 1) buffer Buf {
 layout(push_constant) uniform Params {
 	int width;
 	int height;
+	int enableAIUpscaling;
 } params;
 
 // The cbuffer, if present, is self-declared for layout flexibility
