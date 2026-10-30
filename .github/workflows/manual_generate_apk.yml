@@ -1,4 +1,4 @@
- name: Manual Generate Android APK
+  name: Manual Generate Android APK
   on:
     workflow_dispatch:
       inputs:
@@ -8,11 +8,11 @@
           required: true
           default: 'NormalOptimized'
           options:
-          - NormalOptimized
-          - NormalDebug
-          - VROptimized
-          - VRDebug
-          - LegacyOptimized
+            - NormalOptimized
+            - NormalDebug
+            - VROptimized
+            - VRDebug
+            - LegacyOptimized
 
   jobs:
     apk:
@@ -76,4 +76,4 @@
             name: android-${{ github.event.inputs.buildVariant }} build
             path: ppsspp/
             retention-days: 7
-            
+
