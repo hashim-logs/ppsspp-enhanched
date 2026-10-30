@@ -1,81 +1,84 @@
-name: Manual Generate Android APK
-on:
-  workflow_dispatch:
-    inputs:
+  name: Manual Generate Android APK
+  on:
+    workflow_dispatch:
+      inputs:
+        buildVariant:
+          type: choice
+          description: 'Build Variant'
+          required: true
+          default: 'NormalOptimized'
+          options:
+          - NormalOptimized
+          - NormalDebug
+          - VROptimized
+          - VRDebug
+          - LegacyOptimized
 
-      buildVariant:
-        type: choice
-        description: 'Build Variant'
-        required: true
-        default: 'NormalOptimized'
-        options: 
-        - NormalOptimized
-        - NormalDebug
-        - VROptimized
-        - VRDebug
-        - LegacyOptimized
+  jobs:
+    apk:
+      name: Generate ${{ github.event.inputs.buildVariant }} APK
+      runs-on: ubuntu-latest
+      timeout-minutes: 45
 
-jobs:
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+            submodules: recursive
 
-  apk:
-    name: Generate ${{ github.event.inputs.buildVariant }} APK
-    runs-on: ubuntu-latest
+        - name: Check Valid Version Tags
+          id: valid-tags
+          shell: bash
+          run: |
+            echo "count=$(git tag -l 'v[0-9]*' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
 
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          submodules: recursive
+        - name: Fetch upstream tags
+          if: steps.valid-tags.outputs.count == '0'
+          run: |
+            git remote add upstream https://github.com/hrydgard/ppsspp.git
+            git fetch --deepen=15000 --no-recurse-submodules --tags --force upstream || exit 0
 
-      - name: Check Valid Version Tags
-        id: valid-tags
-        shell: bash
-        run: |
-          echo "count=$(git tag -l 'v[0-9]*' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+        - name: Set up JDK 17
+          uses: actions/setup-java@v4
+          with:
+            distribution: 'temurin'
+            java-version: '17'
+            cache: 'gradle'
 
-      - name: Fetch upstream tags # required for git describe to return a valid version and to preevnt androidGitVersion from crashing on a new fork
-        if: steps.valid-tags.outputs.count == '0'
-        run: |
-          # TODO: should try to fetch tags from whereever this repo was forked from before fetching from official repo
-          git remote add upstream https://github.com/hrydgard/ppsspp.git # fetching from official repo as a fallback
-          git fetch --deepen=15000 --no-recurse-submodules --tags --force upstream || exit 0
-        
-      - name: Setup JDK
-        uses: actions/setup-java@v6.0.1
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-        
-      #- name: Setup SDK # gradlew will install SDK automatically, thus this step not needed
-      #  uses: android-actions/setup-android@v3
-          
-      #- name: Setup NDK # gradle will install NDK (side by side) automatically, thus explictly seting up NDK here will cause not enough storage issue when building debug variant
-      #  uses: nttld/setup-ndk@v1
-      #  with:
-      #    ndk-version: r21e
+        - name: Set up Android SDK
+          uses: android-actions/setup-android@v3
+          with:
+            api-level: 34
+            ndk-version: r25c
+            cmake-version: '3.22.1'
+            build-tools: '34.0.0'
 
-      - name: Test androidGitVersion
-        run: |
-          echo "count=${{steps.valid-tags.outputs.count}}"
-          gradle --quiet androidGitVersion
-      
-      - name: Assemble APK
-        run: ./gradlew assembleDebug --stacktrace
-      
-      #- name: Gradle Test
-      #  run: bash ./gradlew test${{ github.event.inputs.buildVariant }}UnitTest --stacktrace
-      
-      - name: Package build
-        run: |
-          find . -name "*.apk"
-          mkdir ppsspp
-          if [ -e android/build/*/apk/*/*/*.apk ]; then
-            cp android/build/*/apk/*/*/*.apk ppsspp/
-          fi
+        - name: Accept Android Licenses
+          run: yes | sdkmanager --licenses
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: android-${{ github.event.inputs.buildVariant }} build
-          path: ppsspp/
+        - name: Test androidGitVersion
+          run: |
+            echo "count=${{steps.valid-tags.outputs.count}}"
+            gradle --quiet androidGitVersion
+
+        - name: Assemble APK
+          run: |
+            # Map input variant to Gradle task name
+            VARIANT="${{ github.event.inputs.buildVariant }}"
+            TASK="assemble${VARIANT}Debug"
+            echo "Building task: $TASK"
+            ./gradlew $TASK --stacktrace --no-daemon -Dorg.gradle.jvmargs="-Xmx4g"
+
+        - name: Package build
+          run: |
+            find . -name "*.apk"
+            mkdir -p ppsspp
+            # PPSSPP outputs to android/build/outputs/apk/<flavor>/<type>/
+            find android/build/outputs/apk -name "*.apk" -exec cp {} ppsspp/ \;
+
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: android-${{ github.event.inputs.buildVariant }} build
+            path: ppsspp/
+            retention-days: 7
