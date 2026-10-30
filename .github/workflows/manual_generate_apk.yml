@@ -8,11 +8,11 @@
           required: true
           default: 'NormalOptimized'
           options:
-            - NormalOptimized
-            - NormalDebug
-            - VROptimized
-            - VRDebug
-            - LegacyOptimized
+          - NormalOptimized
+          - NormalDebug
+          - VROptimized
+          - VRDebug
+          - LegacyOptimized
 
   jobs:
     apk:
@@ -45,12 +45,29 @@
             java-version: '17'
             cache: 'gradle'
 
-        - name: Set up Android SDK (manual - avoids broken action)
+        - name: Set up Android SDK (manual, fixed)
           run: |
-            sdkmanager "cmdline-tools;9.0" --sdk_root=${ANDROID_SDK_ROOT}
-            export PATH=$ANDROID_SDK_ROOT/cmdline-tools/9.0/bin:$PATH
+            # 1. Download & extract cmdline-tools FIRST
+            mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools
+            cd ${ANDROID_SDK_ROOT}/cmdline-tools
+            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+            unzip -q cmdline-tools.zip
+            mv cmdline-tools latest
+            rm cmdline-tools.zip
+
+            # 2. Add to PATH
+            export PATH=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:$PATH
+
+            # 3. Accept licenses
             yes | sdkmanager --licenses --sdk_root=${ANDROID_SDK_ROOT}
-            sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653" "cmake;3.22.1" --sdk_root=${ANDROID_SDK_ROOT}
+
+            # 4. Install required packages
+            sdkmanager \
+              "platforms;android-34" \
+              "build-tools;34.0.0" \
+              "ndk;25.2.9519653" \
+              "cmake;3.22.1" \
+              --sdk_root=${ANDROID_SDK_ROOT}
 
         - name: Test androidGitVersion
           run: |
